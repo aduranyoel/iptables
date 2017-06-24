@@ -1,13 +1,10 @@
-# iptables
-# Custom firewall
-# autor: Yoel Antonio Duran Diaz
-# email: yoet92@gmail.com
-# date: 24-06-2017
+iptables
+==
 ----
 * Solo tienes que ajustar las variables a tu red y tendras un firewall stable y seguro.
 
 GUIA:
-=====
+=
 * 1- cp iptables /etc/init.d/iptables
 * 2- chmod 777 /etc/init.d/iptables
 * 3- apt-get install rcconf
