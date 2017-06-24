@@ -1,6 +1,5 @@
 iptables
 ==
-----
 * Solo tienes que ajustar las variables a tu red y tendras un firewall stable y seguro.
 
 GUIA:
@@ -13,7 +12,7 @@ GUIA:
 * 6- ahora tu firewall iniciara con el sistema (LISTO).
 
 USOS:
-=====
+=
 * /etc/init.d/iptables start ==>> inicia el firewall
 * /etc/init.d/iptables stop ==>> detiene el firewall
 * /etc/init.d/iptables restart ==>> reinicia el firewall
