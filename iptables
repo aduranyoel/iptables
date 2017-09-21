@@ -1,8 +1,9 @@
 #!/bin/bash
 #=============================#
-#SCRIPT by YoeT for IPTABLES
-# Yoel Antonio Duran Diaz
-# yoet92@gmail.com
+# SCRIPT by YoeT for IPTABLES
+# autor: Yoel Antonio Duran Diaz
+# email: yoet92@gmail.com
+# git: https://github.com/yoet92/iptables.git
 #=============================#
 
 # MODULOS NECESARIOS (modprobe)
