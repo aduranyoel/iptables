@@ -40,20 +40,9 @@ ANY_RED=0.0.0.0/0
 # Proxy externo
 PROXY_EXT=xxx.xxx.xx.x
 
-#==========================COLORES===================================#
-
-rojo="\e[31m"
-verde="\e[32m"
-blanco="\e[37m"
-amarillo="\e[33m"
-cyan="\e[36m"
-rosa="\e[35m"
-cierre="\e[0m"
-
 #==========================START=====================================#
 
 start_rules() {
-echo -e "${amarillo}Iniciando${cierre}${blanco} IPTABLES FIREWALL${cierre} ..."
 
 # FUSH
 $IPTABLES -F
@@ -158,20 +147,18 @@ $IPTABLES -t nat -A POSTROUTING -o $LAN_IF -s $LAN_RED -j ACCEPT
 #$IPTABLES -A INPUT  -j LOG --log-prefix "[FW - IN] "
 #$IPTABLES -A OUTPUT -j LOG --log-prefix "[FW - OU] "
 
-echo -e "[  ${verde}OK${cierre}  ] ${blanco}IPTABLES Iniciado"
-echo -e "${cyan}SYSTEMA${verde} PROTEGIDO${cierre}"
-echo -e "${verde}
+echo "
    ------------
   |       /    |
   |      /     |
   |    \/      |
   |  -----     |
-   ------------ ${cierre}"
+   ------------ "
 }
 #==========================STOP======================================#
 
 stop_rules() {
-echo -e "${amarillo}Deteniendo${cierre}${blanco} IPTABLES FIREWALL${cierre} ..."
+
 $IPTABLES -F INPUT
 $IPTABLES -F FORWARD
 $IPTABLES -F OUTPUT
@@ -181,15 +168,14 @@ $IPTABLES -t nat -F
 $IPTABLES -P INPUT ACCEPT
 $IPTABLES -P FORWARD ACCEPT
 $IPTABLES -P OUTPUT ACCEPT
-echo -e "[  ${verde}OK${cierre}  ] ${blanco}IPTABLES Detenido"
-echo -e "${cyan}SYSTEMA${cierre} ${rojo}VULNERABLE"
-echo -e " ${rojo}
+
+echo "
    ------------
   |   \   /    |
   |    \ /     |
   |    / \     |
   |   /   \    |
-   ------------ ${cierre}"
+   ------------ "
 }
 
 #====================================================================#
@@ -203,12 +189,12 @@ start_rules
 stop_rules
     ;;
 	restart)
-echo -e "${amarillo}Restarting${cierre}${blanco} IPTABLES FIREWALL ..."
+echo "Restarting IPTABLES FIREWALL ..."
 stop_rules
 start_rules
 	;;
     *)
-echo -e "${rojo}Uso:${cierre} IPTABLES ${cyan}start/stop/restart${cierre}"
+echo "Parametros: start/stop/restart"
     ;;
 
 esac
