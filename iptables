@@ -1,5 +1,4 @@
-#! /bin/sh
-
+#!/bin/sh
 ### BEGIN INIT INFO
 # Provides:          iptables
 # Required-Start:    $network
@@ -194,8 +193,8 @@ stop_rules
 start_rules
 	;;
     *)
-echo "Parametros: start/stop/restart"
+echo "Uso: $0 {start/stop/restart}"
     ;;
 
 esac
-:
+exit 0
