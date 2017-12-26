@@ -16,4 +16,3 @@
 2. /etc/init.d/iptables stop ==>> detiene el firewall
 3. /etc/init.d/iptables restart ==>> reinicia el firewall
 
-Con este escript no importa los servicios que tengas en tu servidor. Todos funcionaran bien sin necesidad de modificar ninguna regla.
