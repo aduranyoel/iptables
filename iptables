@@ -22,11 +22,11 @@ IPTABLES=/sbin/iptables
 
 # INTERFACES
 # WAN
-EXT_IF=ethX
+EXT_IF=ethx
 EXT_IP=xxx.xxx.xx.x
 
 # LAN
-LAN_IF=ethX
+LAN_IF=ethx
 LAN_IP=xxx.xxx.xx.x
 LAN_RED=xxx.xxx.xx.x/xx
 
@@ -146,13 +146,7 @@ $IPTABLES -t nat -A POSTROUTING -o $LAN_IF -s $LAN_RED -j ACCEPT
 #$IPTABLES -A INPUT  -j LOG --log-prefix "[FW - IN] "
 #$IPTABLES -A OUTPUT -j LOG --log-prefix "[FW - OU] "
 
-echo "
-   ------------
-  |       /    |
-  |      /     |
-  |    \/      |
-  |  -----     |
-   ------------ "
+echo "INICIADO"
 }
 #==========================STOP======================================#
 
@@ -168,13 +162,9 @@ $IPTABLES -P INPUT ACCEPT
 $IPTABLES -P FORWARD ACCEPT
 $IPTABLES -P OUTPUT ACCEPT
 
-echo "
-   ------------
-  |   \   /    |
-  |    \ /     |
-  |    / \     |
-  |   /   \    |
-   ------------ "
+echo 0 > /proc/sys/net/ipv4/ip_forward
+
+echo "DETENIDO"
 }
 
 #====================================================================#
@@ -182,19 +172,22 @@ echo "
 case "$1" in
     start)
 start_rules
+apt moo
     ;;
 
     stop)
 stop_rules
+apt moo
     ;;
 	restart)
 echo "Restarting IPTABLES FIREWALL ..."
 stop_rules
 start_rules
+apt moo
 	;;
     *)
 echo "Uso: $0 {start/stop/restart}"
     ;;
 
 esac
-exit 0
+:
