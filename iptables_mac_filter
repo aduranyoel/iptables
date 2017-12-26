@@ -26,7 +26,7 @@ EXT_IF=ethx
 EXT_IP=xxx.xxx.xx.x
 
 # LAN
-LAN_IF=eth0
+LAN_IF=ethx
 LAN_IP=xxx.xxx.xx.x
 LAN_RED=xxx.xxx.xx.x/xx
 
