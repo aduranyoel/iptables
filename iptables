@@ -17,33 +17,40 @@
 
 #==========================VARIABLES=================================#
 
-# Binario de IPTABLES
-IPTABLES=/sbin/iptables
-
-# INTERFACES
 # WAN
-EXT_IF=ethx
-EXT_IP=xxx.xxx.xx.x
-
+EXT_IF= #eg. eth0
 # LAN
-LAN_IF=ethx
-LAN_IP=xxx.xxx.xx.x
-LAN_RED=xxx.xxx.xx.x/xx
+LAN_IF= #eg. eth1
+# LAN RED
+LAN_RED= #eg. 192.168.1.0/24
+# Proxy Externo
+PROXY_EXT= #eg. 172.16.0.20
 
-# loopback
+#=====================
+
+IPTABLES=/sbin/iptables
+EXT_IP=`ifconfig $EXT_IF | egrep "inet addr" | cut -d : -f2 | cut -d \  -f1`
+LAN_IP=`ifconfig $LAN_IF | egrep "inet addr" | cut -d : -f2 | cut -d \  -f1`
 LOO_RED=127.0.0.0/8
-
-# Cualquier red
 ANY_RED=0.0.0.0/0
-
-# Proxy externo
-PROXY_EXT=xxx.xxx.xx.x
+LOGO=echo "
+  __ _                        _ _
+ / _(_)_ __ _____      ____ _| | |
+| |_| | '__/ _ \ \ /\ / / _ \`| | |
+|  _| | | |  __/\ V  V / (_| | | |
+|_| |_|_|  \___| \_/\_/ \__,_|_|_|
+"
+if [ ! -x $IPTABLES ]; then
+$LOGO
+echo "ERROR
+=====
+${IPTABLES} :No existe o no tiene permiso de ejecucion."
+exit 0
+fi
 
 #==========================START=====================================#
 
 start_rules() {
-
-# FUSH
 $IPTABLES -F
 $IPTABLES -X
 $IPTABLES -Z
@@ -53,89 +60,66 @@ $IPTABLES -P INPUT DROP
 $IPTABLES -P FORWARD DROP
 $IPTABLES -P OUTPUT DROP
 
-# Bloquear paquetes broadcast de NetBios salientes
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
 $IPTABLES -A FORWARD -p tcp --sport 137:139 -o $EXT_IF -j DROP
 $IPTABLES -A FORWARD -p udp --sport 137:139 -o $EXT_IF -j DROP
 $IPTABLES -A OUTPUT  -p tcp --sport 137:139 -o $EXT_IF -j DROP
 $IPTABLES -A OUTPUT  -p udp --sport 137:139 -o $EXT_IF -j DROP
 
-# Dejamos salir paquetes de LAN_IP por LAN_IF
-$IPTABLES -A OUTPUT -o $LAN_IF -s $LAN_IP -j ACCEPT
-
-# Dejamos salir paquetes de EXT_IP por EXT_IF
-$IPTABLES -A OUTPUT -o $EXT_IF -s $EXT_IP -j ACCEPT
-
-# Activamos el forward para el NAT
-echo 1 > /proc/sys/net/ipv4/ip_forward
-
-# Bloquear uso del Proxy externo a LAN_RED
 $IPTABLES -A FORWARD -i $LAN_IF -s $LAN_RED -d $PROXY_EXT -j DROP
 
-# Enmascaramos la salida de la LAN
+$IPTABLES -A OUTPUT -o $LAN_IF -s $LAN_IP -j ACCEPT
+$IPTABLES -A OUTPUT -o $EXT_IF -s $EXT_IP -j ACCEPT
+
 $IPTABLES -t nat -A POSTROUTING -s $LAN_RED -o $EXT_IF -j MASQUERADE
 
-# Permitimos todo a loopback
+#lo
 $IPTABLES -A INPUT  -i lo -s $LOO_RED -d $LOO_RED -j ACCEPT
 $IPTABLES -A OUTPUT -o lo -s $LOO_RED -d $LOO_RED -j ACCEPT
 $IPTABLES -t nat -A POSTROUTING -o lo -s $LOO_RED -j ACCEPT
 
-# Damos acceso a LAN_RED
 $IPTABLES -A INPUT  -s $LAN_RED -i $LAN_IF -j ACCEPT
 
-# Aceptamos conexiones DNS
+#DNS
 $IPTABLES -A INPUT  -s $ANY_RED -i $EXT_IF -p udp -m udp --sport 53 --dport 1024:65535 -j ACCEPT
 $IPTABLES -A OUTPUT -d $ANY_RED -o $EXT_IF -p udp -m udp --dport 53 --sport 1024:65535 -j ACCEPT
 
-# Aceptamos conexiones ntpd
+#NTP
 $IPTABLES -A INPUT  -p udp -m udp --dport 123 -i $EXT_IF -s $ANY_RED -j ACCEPT
 $IPTABLES -A OUTPUT -p udp -m udp --sport 123 -j ACCEPT
 
-# Bloqueo de ICMP a EXT_IP  // Opcional, pero no recomendado
-#$IPTABLES -A INPUT -p icmp -i $EXT_IF -d $EXT_IP -j DROP
-
-# Permitimos el resto de paquetes ICMP, con limites para evitar ataques de DoS
+#ICMP
 $IPTABLES -A INPUT -p icmp --icmp-type echo-request -m limit --limit 2/s -j ACCEPT
 $IPTABLES -A OUTPUT -p icmp --icmp-type echo-request -m limit --limit 2/s -j ACCEPT
 $IPTABLES -A INPUT -p icmp --icmp-type echo-reply -m limit --limit 2/s -j ACCEPT
 $IPTABLES -A OUTPUT -p icmp --icmp-type echo-reply -m limit --limit 2/s -j ACCEPT
-# Aceptamos redirecciones
+#Redirecciones
 $IPTABLES -A INPUT -p icmp --icmp-type redirect -m limit --limit 2/s -j ACCEPT
 $IPTABLES -A OUTPUT -p icmp --icmp-type redirect -m limit --limit 2/s -j ACCEPT
-# Aceptamos tiempo excedido
+#Tiempo Excedido
 $IPTABLES -A INPUT -p icmp --icmp-type time-exceeded -m limit --limit 2/s -j ACCEPT
 $IPTABLES -A OUTPUT -p icmp --icmp-type time-exceeded -m limit --limit 2/s -j ACCEPT
-# Aceptamos destino inalcanzable
+#Destino Inalcanzable
 $IPTABLES -A INPUT -p icmp --icmp-type destination-unreachable -m limit --limit 2/s -j ACCEPT
 $IPTABLES -A OUTPUT -p icmp --icmp-type destination-unreachable -m limit --limit 2/s -j ACCEPT
 
-# Aceptamos conexiones salientes
-
-# Permitimos cualquier salida tcp desde la propia maquina
+#INET
 $IPTABLES -A OUTPUT -o $EXT_IF -p tcp -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
-# ...y conexiones entrantes relacionadas
 $IPTABLES -A INPUT  -i $EXT_IF -p tcp -m state --state ESTABLISHED,RELATED -j ACCEPT
 
-# Permitimos el reenvio de paquetes enviados desde la LAN
 $IPTABLES -A FORWARD -i $LAN_IF -j ACCEPT
-# ...y conexiones salientes relacionadas
 $IPTABLES -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# Permitimos el NAT de paquetes enviados desde la LAN
 $IPTABLES -t nat -A PREROUTING  -i $LAN_IF -j ACCEPT
-# ...y conexiones salientes relacionadas
 $IPTABLES -t nat -A PREROUTING  -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# Permitimos el NAT de paquetes enviados desde inet hacia la IP publica
 $IPTABLES -t nat -A PREROUTING  -i $EXT_IF -d $EXT_IP -j ACCEPT
-# ...y conexiones salientes relacionadas
 $IPTABLES -t nat -A PREROUTING  -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# Permitimos el NAT de paquetes enviados desde la IP publica hacia inet
 $IPTABLES -t nat -A POSTROUTING -o $EXT_IF -s $EXT_IP -j ACCEPT
-# ...y conexiones salientes relacionadas
 $IPTABLES -t nat -A POSTROUTING -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# Permitimos el PostEnrutado de paquetes enviados localmente
 $IPTABLES -t nat -A POSTROUTING -o $LAN_IF -s $LAN_RED -j ACCEPT
 
 #==========================LOGS=========/var/log/kern.log============#
@@ -143,15 +127,21 @@ $IPTABLES -t nat -A POSTROUTING -o $LAN_IF -s $LAN_RED -j ACCEPT
 #$IPTABLES -t nat -A PREROUTING  -j LOG --log-prefix "[FW - PR] "
 #$IPTABLES -t nat -A POSTROUTING -j LOG --log-prefix "[FW - PO] "
 #$IPTABLES -A FORWARD -j LOG --log-prefix "[FW - FW] "
-#$IPTABLES -A INPUT  -j LOG --log-prefix "[FW - IN] "
+#$IPTABLES -A INPUT -p tcp --dport 1:65535 -j LOG --log-prefix "[FW - IN] "
 #$IPTABLES -A OUTPUT -j LOG --log-prefix "[FW - OU] "
 
-echo "INICIADO"
+#-----
+$IPTABLES -A INPUT -p tcp --dport 1:65535 -j DROP
+$IPTABLES -A INPUT -p udp --dport 1:65535 -j DROP
+#-----
+
+echo "INICIADO
+========"
 }
+
 #==========================STOP======================================#
 
 stop_rules() {
-
 $IPTABLES -F INPUT
 $IPTABLES -F FORWARD
 $IPTABLES -F OUTPUT
@@ -164,29 +154,35 @@ $IPTABLES -P OUTPUT ACCEPT
 
 echo 0 > /proc/sys/net/ipv4/ip_forward
 
-echo "DETENIDO"
+echo "DETENIDO
+========"
 }
 
 #====================================================================#
 
 case "$1" in
-    start)
+    start|i)
+$LOGO
 start_rules
-apt moo
     ;;
 
-    stop)
+    stop|d)
+$LOGO
 stop_rules
-apt moo
+
     ;;
-	restart)
+	restart|r)
+$LOGO
 echo "Restarting IPTABLES FIREWALL ..."
 stop_rules
 start_rules
-apt moo
-	;;
+;;
+	status|s)
+$LOGO
+$IPTABLES -L -n
+;;
     *)
-echo "Uso: $0 {start/stop/restart}"
+echo "Uso: $0 {start(i)/stop(d)/restart(r)/status(s)}"
     ;;
 
 esac
