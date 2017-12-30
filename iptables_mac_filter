@@ -17,31 +17,49 @@
 
 #==========================VARIABLES=================================#
 
-# Binario de IPTABLES
-IPTABLES=/sbin/iptables
-
-# INTERFACES
 # WAN
-EXT_IF=ethx
-EXT_IP=xxx.xxx.xx.x
-
+EXT_IF= #eg. eth0
 # LAN
-LAN_IF=ethx
-LAN_IP=xxx.xxx.xx.x
-LAN_RED=xxx.xxx.xx.x/xx
+LAN_IF= #eg. eth1
+# LAN RED
+LAN_RED= #eg. 192.168.1.0/24
+# Proxy Externo
+PROXY_EXT= #eg. 172.16.0.20
+# Archivo con MACs
+MAC_FILE=/etc/mac
 
-# loopback
+#=====================
+
+IPTABLES=/sbin/iptables
+EXT_IP=`ifconfig $EXT_IF | egrep "inet addr" | cut -d : -f2 | cut -d \  -f1`
+LAN_IP=`ifconfig $LAN_IF | egrep "inet addr" | cut -d : -f2 | cut -d \  -f1`
 LOO_RED=127.0.0.0/8
-
-# Cualquier red
 ANY_RED=0.0.0.0/0
-
-# Proxy externo
-PROXY_EXT=xxx.xxx.xx.x
+LOGO=echo "
+  __ _                        _ _
+ / _(_)_ __ _____      ____ _| | |
+| |_| | '__/ _ \ \ /\ / / _ \`| | |
+|  _| | | |  __/\ V  V / (_| | | |
+|_| |_|_|  \___| \_/\_/ \__,_|_|_|
+"
+if [ ! -x $IPTABLES ]; then
+$LOGO
+echo "ERROR
+=====
+${IPTABLES} :No existe o no tiene permiso de ejecucion."
+exit 0
+fi
 
 #==========================START=====================================#
+
 start_rules() {
-# Limpiar reglas existentes
+if [ ! -s $MAC_FILE ]; then
+$LOGO
+echo "ERROR
+=====
+El fichero: ${MAC_FILE} no existe o esta vacio, debe crearlo y llenarlo."
+exit 0
+fi
 $IPTABLES -F
 $IPTABLES -X
 $IPTABLES -Z
@@ -58,10 +76,9 @@ $IPTABLES -A FORWARD -p udp --sport 137:139 -o $EXT_IF -j DROP
 $IPTABLES -A OUTPUT  -p tcp --sport 137:139 -o $EXT_IF -j DROP
 $IPTABLES -A OUTPUT  -p udp --sport 137:139 -o $EXT_IF -j DROP
 
-# Bloquear uso del Proxy externo a LAN_RED
 $IPTABLES -A FORWARD -i $LAN_IF -s $LAN_RED -d $PROXY_EXT -j DROP
 
-for MAC in `cat /etc/mac`; do
+for MAC in `cat ${MAC_FILE}`; do
 $IPTABLES -A FORWARD -i $LAN_IF -m mac --mac-source $MAC -j ACCEPT
 $IPTABLES -A INPUT  -s $LAN_RED -i $LAN_IF -m mac --mac-source $MAC -j ACCEPT
 $IPTABLES -t nat -A PREROUTING  -i $LAN_IF -m mac --mac-source $MAC -j ACCEPT
@@ -70,7 +87,6 @@ done
 $IPTABLES -A OUTPUT -o $LAN_IF -s $LAN_IP -j ACCEPT
 $IPTABLES -A OUTPUT -o $EXT_IF -s $EXT_IP -j ACCEPT
 
-#NAT
 $IPTABLES -t nat -A POSTROUTING -s $LAN_RED -o $EXT_IF -j MASQUERADE
 
 #lo
@@ -91,13 +107,13 @@ $IPTABLES -A INPUT -p icmp --icmp-type echo-request -m limit --limit 2/s -j ACCE
 $IPTABLES -A OUTPUT -p icmp --icmp-type echo-request -m limit --limit 2/s -j ACCEPT
 $IPTABLES -A INPUT -p icmp --icmp-type echo-reply -m limit --limit 2/s -j ACCEPT
 $IPTABLES -A OUTPUT -p icmp --icmp-type echo-reply -m limit --limit 2/s -j ACCEPT
-# Aceptamos redirecciones
+#Redirecciones
 $IPTABLES -A INPUT -p icmp --icmp-type redirect -m limit --limit 2/s -j ACCEPT
 $IPTABLES -A OUTPUT -p icmp --icmp-type redirect -m limit --limit 2/s -j ACCEPT
-# Aceptamos tiempo excedido
+#Tiempo Excedido
 $IPTABLES -A INPUT -p icmp --icmp-type time-exceeded -m limit --limit 2/s -j ACCEPT
 $IPTABLES -A OUTPUT -p icmp --icmp-type time-exceeded -m limit --limit 2/s -j ACCEPT
-# Aceptamos destino inalcanzable
+#Destino Inalcanzable
 $IPTABLES -A INPUT -p icmp --icmp-type destination-unreachable -m limit --limit 2/s -j ACCEPT
 $IPTABLES -A OUTPUT -p icmp --icmp-type destination-unreachable -m limit --limit 2/s -j ACCEPT
 
@@ -117,9 +133,6 @@ $IPTABLES -t nat -A POSTROUTING -m state --state RELATED,ESTABLISHED -j ACCEPT
 
 $IPTABLES -t nat -A POSTROUTING -o $LAN_IF -s $LAN_RED -j ACCEPT
 
-#-----
-$IPTABLES -A INPUT -p tcp --dport 1:65535 -j DROP
-#-----
 #==========================LOGS=========/var/log/kern.log============#
 
 #$IPTABLES -t nat -A PREROUTING  -j LOG --log-prefix "[FW - PR] "
@@ -128,7 +141,13 @@ $IPTABLES -A INPUT -p tcp --dport 1:65535 -j DROP
 #$IPTABLES -A INPUT -p tcp --dport 1:65535 -j LOG --log-prefix "[FW - IN] "
 #$IPTABLES -A OUTPUT -j LOG --log-prefix "[FW - OU] "
 
-echo "INICIADO"
+#-----
+$IPTABLES -A INPUT -p tcp --dport 1:65535 -j DROP
+$IPTABLES -A INPUT -p udp --dport 1:65535 -j DROP
+#-----
+
+echo "INICIADO
+========"
 }
 
 #==========================STOP======================================#
@@ -144,29 +163,37 @@ $IPTABLES -P INPUT ACCEPT
 $IPTABLES -P FORWARD ACCEPT
 $IPTABLES -P OUTPUT ACCEPT
 
-echo "DETENIDO"
+echo 0 > /proc/sys/net/ipv4/ip_forward
+
+echo "DETENIDO
+========"
 }
 
 #====================================================================#
 
 case "$1" in
-    start)
+    start|i)
+$LOGO
 start_rules
-apt moo
     ;;
 
-    stop)
+    stop|d)
+$LOGO
 stop_rules
-apt moo
+
     ;;
-	restart)
+	restart|r)
+$LOGO
 echo "Restarting IPTABLES FIREWALL ..."
 stop_rules
 start_rules
-apt moo
-	;;
+;;
+	status|s)
+$LOGO
+$IPTABLES -L -n
+;;
     *)
-echo "Uso: $0 {start/stop/restart}"
+echo "Uso: $0 {start(i)/stop(d)/restart(r)/status(s)}"
     ;;
 
 esac
