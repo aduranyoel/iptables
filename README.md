@@ -1,18 +1,21 @@
-## iptables
+ ## iptables
 
- - Solo tienes que ajustar las variables a tu red y tendras un firewall stable y seguro.
+ - La edicion del escript es necesaria para su funcionamiento.!!!
+ - Solo tienes que ajustar las variables a tu red.
 
 #### GUIA:
-##### Activar inicio automatico
+##### Para activar inicio automatico
 1. `cp iptables /etc/init.d/iptables`
-2. `chmod 777 /etc/init.d/iptables`
-3. `sudo update-rc.d iptables start 45 S . stop 31 0 6`
+2. `chmod +x /etc/init.d/iptables`
+3. `update-rc.d iptables defaults`
 
-##### Desactivar inicio automatico
-1. `sudo update-rc.d -f iptables remove`
+##### Para desactivar inicio automatico
+1. `update-rc.d -f iptables remove`
 
-#### USOS:
-1. /etc/init.d/iptables start ==>> inicia el firewall
-2. /etc/init.d/iptables stop ==>> detiene el firewall
-3. /etc/init.d/iptables restart ==>> reinicia el firewall
+#### USO:
+`/etc/init.d/iptables {start(i)|stop(d)|restart(r)|status(s)}`
+1. start(i): Inicia el firewall
+2. stop(d): Detiene el firewall
+3. restart(r): Reinicia el firewall
+4. status(s): Lista las reglas del firewall
 
