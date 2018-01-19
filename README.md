@@ -12,10 +12,11 @@
 4. `update-rc.d iptables defaults`
 
 ##### Para desactivar inicio automatico
-1. `update-rc.d -f iptables remove`
+`update-rc.d -f iptables remove`
 
 #### USO:
-`/etc/init.d/iptables {start(i)|stop(d)|restart(r)|status(s)}`
+`/etc/init.d/iptables {start(i)|stop(d)|restart(r)|status(s)`
+
 1. start(i): Inicia el firewall
 2. stop(d): Detiene el firewall
 3. restart(r): Reinicia el firewall
