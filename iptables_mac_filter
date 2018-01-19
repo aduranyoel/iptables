@@ -1,0 +1,171 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:          iptables
+# Required-Start:    $network $syslog
+# Required-Stop:     $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Control iptables firewall.
+### END INIT INFO
+
+#
+# Author: Yoel Antonio Duran Diaz <yoet92@gmail.com>
+# Git: https://github.com/yoet92/iptables.git
+#
+
+#==========================VARIABLES=================================#
+
+# WAN INTERFACE
+EXT_IF= #ej. eth0
+# LAN INTERFACE
+LAN_IF= #ej. eth1
+# LAN RED
+LAN_RED= #ej. 192.168.56.0/24
+# PROXY EXTERNO A BLOQUEAR
+PROXY_EXT= #ej. 172.16.0.20
+# ARCHIVO CON MAC ej. 00:11:22:33:44:55
+MAC_FILE=/etc/mac
+# PUERTOS ABIERTOS A LAN
+IN_LAN=(20 21 22 80 443 25 587 110 995 143 993 389 636)
+# PUERTOS ABIERTOS A WAN
+IN_WAN=()
+
+#====================================================================#
+
+IPTABLES=/sbin/iptables
+EXT_IP=`ifconfig $EXT_IF | egrep "inet addr" | cut -d : -f2 | cut -d \  -f1`
+LAN_IP=`ifconfig $LAN_IF | egrep "inet addr" | cut -d : -f2 | cut -d \  -f1`
+LOO_RED=127.0.0.0/8
+ANY_RED=0.0.0.0/0
+LOGO=echo "
+  __ _                        _ _
+ / _(_)_ __ _____      ____ _| | |
+| |_| | '__/ _ \ \ /\ / / _ \`| | |
+|  _| | | |  __/\ V  V / (_| | | |
+|_| |_|_|  \___| \_/\_/ \__,_|_|_|
+"
+check() {
+if [ ! -x $IPTABLES ]; then
+echo "ERROR
+=====
+${IPTABLES} :No existe o no tiene permiso de ejecucion."
+exit 0
+fi
+}
+#==========================START=====================================#
+
+start_rules() {
+if [ ! -s $MAC_FILE ]; then
+$LOGO
+echo "ERROR
+=====
+El fichero: ${MAC_FILE} no existe o esta vacio, debe crearlo y llenarlo."
+exit 0
+fi
+$IPTABLES -F
+$IPTABLES -X
+$IPTABLES -Z
+$IPTABLES -t nat -F
+
+$IPTABLES -P INPUT DROP
+$IPTABLES -P FORWARD DROP
+$IPTABLES -P OUTPUT ACCEPT
+
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+$IPTABLES -A FORWARD -p tcp --sport 137:139 -o $EXT_IF -j DROP
+$IPTABLES -A FORWARD -p udp --sport 137:139 -o $EXT_IF -j DROP
+$IPTABLES -A OUTPUT  -p tcp --sport 137:139 -o $EXT_IF -j DROP
+$IPTABLES -A OUTPUT  -p udp --sport 137:139 -o $EXT_IF -j DROP
+
+$IPTABLES -A FORWARD -i $LAN_IF -s $LAN_RED -d $PROXY_EXT -j DROP
+
+$IPTABLES -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+$IPTABLES -t nat -A POSTROUTING -s $LAN_RED -o $EXT_IF -j MASQUERADE
+
+for MAC in `cat ${MAC_FILE}`; do
+$IPTABLES -A FORWARD -i $LAN_IF -m mac --mac-source $MAC -j ACCEPT
+#IN LAN
+for l in ${IN_LAN[*]}; do
+$IPTABLES -A INPUT -i $LAN_IF -s $LAN_RED -p tcp --dport $l -m mac --mac-source $MAC -j ACCEPT
+done
+done
+
+#lo
+$IPTABLES -A INPUT  -i lo -s $LOO_RED -j ACCEPT
+
+#IN WAN
+for w in ${IN_WAN[*]}; do
+$IPTABLES -A INPUT -i $EXT_IF -p tcp --dport $w -j ACCEPT
+done
+
+#ICMP
+$IPTABLES -A INPUT -p icmp --icmp-type echo-request -m limit --limit 2/s -j ACCEPT
+$IPTABLES -A INPUT -p icmp --icmp-type echo-reply -m limit --limit 2/s -j ACCEPT
+$IPTABLES -A INPUT -p icmp --icmp-type redirect -m limit --limit 2/s -j ACCEPT
+$IPTABLES -A INPUT -p icmp --icmp-type time-exceeded -m limit --limit 2/s -j ACCEPT
+$IPTABLES -A INPUT -p icmp --icmp-type destination-unreachable -m limit --limit 2/s -j ACCEPT
+
+#==========================LOGS=========/var/log/kern.log============#
+
+#$IPTABLES -A INPUT -p tcp --dport 1:65535 -j LOG --log-prefix "[ENTRADA AL FIREWALL] "
+
+}
+
+#==========================STOP======================================#
+
+stop_rules() {
+$IPTABLES -F INPUT
+$IPTABLES -F FORWARD
+$IPTABLES -F OUTPUT
+$IPTABLES -X
+$IPTABLES -Z
+$IPTABLES -t nat -F
+$IPTABLES -P INPUT ACCEPT
+$IPTABLES -P FORWARD ACCEPT
+$IPTABLES -P OUTPUT ACCEPT
+
+echo 0 > /proc/sys/net/ipv4/ip_forward
+
+}
+
+#====================================================================#
+
+case "$1" in
+    start|i)
+$LOGO
+check
+start_rules
+echo "INICIADO
+========"
+
+    ;;
+
+    stop|d)
+$LOGO
+check
+stop_rules
+echo "DETENIDO
+========"
+
+    ;;
+	restart|r)
+$LOGO
+echo "Restarting IPTABLES FIREWALL ..."
+check
+stop_rules
+start_rules
+echo "INICIADO
+========"
+
+;;
+	status|s)
+$LOGO
+$IPTABLES -L -n
+;;
+    *)
+echo "Uso: $0 {start(i)|stop(d)|restart(r)|status(s)}"
+    ;;
+
+esac
