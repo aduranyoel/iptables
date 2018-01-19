@@ -4,10 +4,12 @@
  - Solo tienes que ajustar las variables a tu red.
 
 #### GUIA:
-##### Para activar inicio automatico
 1. `cp iptables /etc/init.d/iptables`
 2. `chmod +x /etc/init.d/iptables`
-3. `update-rc.d iptables defaults`
+3. `nano /etc/init.d/iptables` Llenar los valores de las variables.
+
+##### Para activar inicio automatico
+4. `update-rc.d iptables defaults`
 
 ##### Para desactivar inicio automatico
 1. `update-rc.d -f iptables remove`
