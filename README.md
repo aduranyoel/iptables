@@ -22,3 +22,5 @@
 3. restart(r): Reinicia el firewall
 4. status(s): Lista las reglas del firewall
 
+#### NOTA:
+En el caso de `iptables_mac_ip_filer` el script `macip_filter.sh` sirve para combinarlo con el servidor dhcp, ya que crea el dhcpd.conf a partir del archivo de `mac` y una configuración establecida del servicio que se encuentre en otro archivo. Se recomienda comentar la línea `range` en la configuración del dhcp para que solamente asigne los ip  a las mac autorizadas.
