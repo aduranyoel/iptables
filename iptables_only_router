@@ -1,0 +1,118 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:          iptables
+# Required-Start:    $network $syslog
+# Required-Stop:     $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Control iptables firewall.
+### END INIT INFO
+
+#
+# Author: Yoel Antonio Duran Diaz <yoet92@gmail.com>
+# Git: https://github.com/yoet92/iptables.git
+#
+
+#==========================VARIABLES=================================#
+
+# WAN INTERFACE
+EXT_IF= #ej. eth0
+# LAN RED
+LAN_RED= #ej. 192.168.56.0/24
+
+
+#====================================================================#
+
+IPTABLES=/sbin/iptables
+cat <<EOF
+  __ _                        _ _
+ / _(_)_ __ _____      ____ _| | |
+| |_| |  __/ _ \ \ /\ / / _  | | |
+|  _| | | |  __/\ V  V / (_| | | |
+|_| |_|_|  \___| \_/\_/ \____|_|_|
+
+EOF
+check() {
+if [ ! -x $IPTABLES ]; then
+echo "ERROR
+=====
+${IPTABLES} :No existe o no tiene permiso de ejecucion."
+exit 0
+fi
+}
+#==========================START=====================================#
+
+start_rules() {
+$IPTABLES -F
+$IPTABLES -X
+$IPTABLES -Z
+$IPTABLES -t nat -F
+
+$IPTABLES -P INPUT ACCEPT
+$IPTABLES -P FORWARD ACCEPT
+$IPTABLES -P OUTPUT ACCEPT
+
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+$IPTABLES -t nat -A POSTROUTING -s $LAN_RED -o $EXT_IF -j MASQUERADE
+
+}
+
+#==========================STOP======================================#
+
+stop_rules() {
+$IPTABLES -F INPUT
+$IPTABLES -F FORWARD
+$IPTABLES -F OUTPUT
+$IPTABLES -X
+$IPTABLES -Z
+$IPTABLES -t nat -F
+$IPTABLES -P INPUT ACCEPT
+$IPTABLES -P FORWARD ACCEPT
+$IPTABLES -P OUTPUT ACCEPT
+
+echo 0 > /proc/sys/net/ipv4/ip_forward
+
+}
+
+#====================================================================#
+MSG_ERR="SE ENCONTRARON ERRORES AL PROCESAR"
+case "$1" in
+    start|i)
+if (( check ) && ( start_rules )); then
+echo "INICIADO
+========"
+else
+echo $MSG_ERR
+exit
+fi
+    ;;
+
+    stop|d)
+if (( check ) && ( stop_rules )); then
+echo "DETENIDO
+========"
+else
+echo $MSG_ERR
+exit
+fi
+    ;;
+	restart|r)
+echo "Restarting IPTABLES FIREWALL ..."
+if (( check ) && ( stop_rules ) && ( start_rules )); then
+echo "REINICIADO
+========"
+else
+echo $MSG_ERR
+exit
+fi
+;;
+	status|s)
+$IPTABLES -L -n
+;;
+    *)
+echo "Uso: $0 {start(i)|stop(d)|restart(r)|status(s)}"
+    ;;
+
+esac
