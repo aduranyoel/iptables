@@ -11,7 +11,7 @@
 
 #
 # Author: Yoel Antonio Duran Diaz <yoet92@gmail.com>
-# Git: https://github.com/yoet92/iptables.git
+# Git: https://github.com/AntomDev/iptables.git
 #
 
 #==========================VARIABLES=================================#
@@ -21,7 +21,7 @@ EXT_IF= #ej. eth0
 # LAN INTERFACE
 LAN_IF= #ej. eth1
 # LAN RED
-LAN_RED= #ej. 192.168.56.0/24
+LAN_RED= #ej. 192.168.1.0/24
 # PROXY EXTERNO A BLOQUEAR
 PROXY_EXT= #ej. 172.16.0.20
 # PUERTOS tcp/udp ABIERTOS A LAN
