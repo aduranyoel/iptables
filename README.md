@@ -9,7 +9,7 @@
 3. `nano /etc/init.d/iptables` Llenar los valores de las variables.
 
 ##### Para activar inicio automatico
-4. `update-rc.d iptables defaults`
+`update-rc.d iptables defaults`
 
 ##### Para desactivar inicio automatico
 `update-rc.d -f iptables remove`
