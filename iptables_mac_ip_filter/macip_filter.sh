@@ -2,7 +2,7 @@
 
 #
 # Author: Yoel Antonio Duran Diaz <yoet92@gmail.com>
-# Git: https://github.com/yoet92/
+# Git: https://github.com/AntomDev/
 #
 
 #==========================VARIABLES=================================#
