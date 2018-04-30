@@ -15,7 +15,7 @@
 `update-rc.d -f iptables remove`
 
 #### USO:
-`/etc/init.d/iptables {start(i)|stop(d)|restart(r)|status(s)`
+`/etc/init.d/iptables {start(i)|stop(d)|restart(r)|status(s)}`
 
 1. start(i): Inicia el firewall
 2. stop(d): Detiene el firewall
@@ -23,4 +23,4 @@
 4. status(s): Lista las reglas del firewall
 
 #### NOTA:
-En el caso de `iptables_mac_ip_filer` el script `macip_filter.sh` sirve para combinarlo con el servidor dhcp, ya que crea el dhcpd.conf a partir del archivo de `mac` y una configuración establecida del servicio que se encuentre en otro archivo. Se recomienda comentar la línea `range` en la configuración del dhcp para que solamente asigne los ip  a las mac autorizadas.
+En el caso de `iptables_mac_ip_filer` el script `macip_filter.sh` sirve para combinarlo con el servidor DHCP, ya que crea el "dhcpd.conf" a partir del archivo que contiene las `mac` y una configuración establecida del servicio que se encuentre en otro archivo. Se recomienda comentar la línea `range` en la configuración del DHCP para que solamente asigne los IP  a las MAC autorizadas.
