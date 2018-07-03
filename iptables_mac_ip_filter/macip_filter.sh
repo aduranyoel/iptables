@@ -2,13 +2,13 @@
 
 #
 # Author: Yoel Antonio Duran Diaz <yoet92@gmail.com>
-# Git: https://github.com/AntomDev/
+# Git: https://github.com/yoet92/
 #
 
 #==========================VARIABLES=================================#
 
 # LAN RED
-LAN_RED= #ej. 192.168.56.0/24
+LAN_RED= #ej. 192.168.1.0/24
 # ARCHIVO CON MAC;IP ej. 00:11:22:33:44:55;254
 MAC_FILE=/etc/mac
 # CONFIGURACION DHCP
