@@ -1,6 +1,6 @@
  ## iptables
 
- - La edición del escript es necesaria para su funcionamiento.!!!
+ - La edición del escript es necesaria para su funcionamiento!!!
  - Solo tienes que ajustar las variables a tu red.
 
 #### GUIA:
